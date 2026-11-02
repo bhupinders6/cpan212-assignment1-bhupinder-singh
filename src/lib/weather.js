@@ -10,10 +10,56 @@ import { describeWeatherCode } from './weather-codes.js';
 // the forecast, build the summary, store it, and return it with cached: false.
 // On a hit, return the stored summary with cached: true.
 export async function getCityWeather(city) {
-  throw new Error('getCityWeather is not written yet');
+ const fetchedAt= new Date().toISOString();
+
+ const location = await geocodeCity(city);
+ const forecast= await getForecast(
+  location.latitude,
+  location.longitude
+ );
+
+ const current= forecast.current;
+ const daily= forecast.daily;
+
+ const days= [];
+
+ for (let i=0; i<daily.time.length; i++) {
+  days.push({
+    date: daily.time[i],
+    minC: daily.temperature_2m_min[i],
+    maxC: daily.temperature_2m_max[i],
+    precipitationChancePercent: daily.precipitation_probability_max[i] ?? null,
+    weatherCode: daily.weather_code[i],
+    conditions: describeWeatherCode(daily.weather_code[i]),
+    });
+  }
+
+const summary= { 
+  location,
+  current: {
+    time: current.time,
+    temperatureC: current.temperature_2m,
+    feelsLikeC: current.apparent_temperature,
+    humidityPercent: current.relative_humidity_2m,
+    windKmh: current.wind_speed_10m,
+    weatherCode: current.weather_code,
+    conditions: describeWeatherCode(current.weather_code),
+  },
+  daily: days,
+  fetchedAt,
+  cached: false,
+};
+
+return summary;
 }
 
 // TODO (you): return the cache statistics for GET /api/cache/stats.
 export function getCacheStats() {
-  throw new Error('getCacheStats is not written yet');
+  return {
+    entries: 0,
+    hits: 0,
+    misses: 0,
+    ttlSeconds: config.cacheTtlSeconds,
+  };
 }
+
