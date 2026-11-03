@@ -1,7 +1,10 @@
 import { config } from '../config.js';
 import { geocodeCity, getForecast } from './open-meteo.js';
 import { describeWeatherCode } from './weather-codes.js';
+import { TtlCache } from './cache.js';
 
+
+const cache = new TtlCache(config.cacheTtlSeconds);
 // TODO (you): create one cache for the whole app, with a time to live of
 // config.cacheTtlSeconds.
 
@@ -12,6 +15,12 @@ import { describeWeatherCode } from './weather-codes.js';
 export async function getCityWeather(city) {
  const fetchedAt= new Date().toISOString();
 
+ const key = city.trim().toLowerCase();
+
+   const saved = cache.get(key);
+  if (saved) {
+    return { ...saved, cached: true };
+}
  const location = await geocodeCity(city);
  const forecast= await getForecast(
   location.latitude,
@@ -45,21 +54,18 @@ const summary= {
     weatherCode: current.weather_code,
     conditions: describeWeatherCode(current.weather_code),
   },
+  
   daily: days,
   fetchedAt,
   cached: false,
 };
 
+cache.set(key, summary);
 return summary;
 }
 
 // TODO (you): return the cache statistics for GET /api/cache/stats.
 export function getCacheStats() {
-  return {
-    entries: 0,
-    hits: 0,
-    misses: 0,
-    ttlSeconds: config.cacheTtlSeconds,
-  };
+  return cache.stats();
 }
 

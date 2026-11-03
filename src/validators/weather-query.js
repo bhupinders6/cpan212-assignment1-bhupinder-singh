@@ -37,7 +37,7 @@ export function parseCities(value) {
   const parts=value.split(',');
   const cities=[];
 
-  for (let i-=0; i<parts.length; i++) {
+for (let i = 0; i < parts.length; i++) {
     const city=parts[i].trim();
 
     if(city === '') {
@@ -60,6 +60,6 @@ export function parseCities(value) {
     }
     seen.push(lower);
   }
-  
+
   return cities;
 }

@@ -2,16 +2,17 @@
 // It needs a way to get a value (counting a hit or a miss), store a value,
 // and report { entries, hits, misses, ttlSeconds }. The exact counting rules
 // are on the assignment page. A Map with { value, expiresAt } entries works well.
+
 export class TtlCache {
     constructor(ttlSeconds) {
         this.ttlSeconds = ttlSeconds;
-        this.cache = new Map();
+        this.store = new Map();
         this.hits = 0;
         this.misses = 0;
     }
     // to get a value, counting a hit or a miss
     get(key) {
-        const entry = this.cache.get(key);
+        const entry = this.store.get(key);
 
         // not in the cache
         if (entry === undefined) {
@@ -42,7 +43,7 @@ export class TtlCache {
     stats() {
          const now = Date.now();
         // Remove expired entries
-        for (const[key,entry] of this.store()) {
+        for (const [key, entry] of this.store) {
             if (now >= entry.expiresAt) {
                 this.store.delete(key);
             }
