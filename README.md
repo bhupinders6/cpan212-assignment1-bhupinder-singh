@@ -1,33 +1,76 @@
 # City Weather API
-
-TODO (you): one or two sentences on what this service does.
+An Express 5 service that gets weather info by calling the free Open-Meteo API (no API key needed). It turns a city name to coordinates, returns current weather and 3 day forecast, compares 2-5 cities at the same time and handles partial failures, puts a timeout on all upstream requests, and caches responses in memory.
 
 ## Run it
 
-TODO (you): the commands to install and start it, including copying `.env.example` to `.env`.
+To run, it requires Node.js 24 or newer
+
+npm install
+cp .env.example .env
+node src/server.js
+
 
 ## Environment variables
 
-TODO (you): a table with every variable from `.env.example`, its default, and what it controls.
+| Variable | Default | What it controls |
+| --- | --- | --- |
+| `PORT` | `4000` | Port the server listens on |
+| `GEOCODING_URL` | `https://geocoding-api.open-meteo.com/v1` | Geocoding base URL |
+| `FORECAST_URL` | `https://api.open-meteo.com/v1` | Forecast base URL |
+| `UPSTREAM_TIMEOUT_MS` | `TODO: copy from src/config.js` | Timeout for each Open-Meteo request (in milliseconds)|
+| `CACHE_TTL_SECONDS` | `600` | How long a cached city stays valid( in seconds)|
 
 ## Endpoints
 
-TODO (you): each endpoint with an example request and a short description of the response.
+- **GET `/api/weather?city=<name>`**
+  - Displays current weather and 3-day forecast for 1 city.
+  - Example: `curl "http://localhost:4000/api/weather?city=Toronto"`
+
+- **GET `/api/compare?cities=<city1,city2,...>`**
+  - Can compare 2-5 cities at once to find coldest/warmest.
+  - Example: `curl "http://localhost:4000/api/compare?cities=Toronto,Vancouver,Halifax"`
+
+- **GET `/api/cache/stats`**
+  - Displays cache stats including hits, misses and active entries.
+  - Example: `curl "http://localhost:4000/api/cache/stats"`
 
 ## Testing
 
-TODO (you): one `curl` command for each of the 10 requests on the assignment page, with the status
-code it should get on a freshly started server. On Windows, run these in Git Bash. An example to copy:
-
 ```bash
-# Weather for a city: 200
+# 1. Weather for a city: 200 (cached: false)
 curl -i "http://localhost:4000/api/weather?city=Toronto"
+ 
+# 2. Same city again, different capitals: 200 (cached: true, same fetchedAt)
+curl -i "http://localhost:4000/api/weather?city=toronto"
+ 
+# 3. Missing city: 400
+curl -i "http://localhost:4000/api/weather"
+ 
+# 4. City too short: 400
+curl -i "http://localhost:4000/api/weather?city=a"
+ 
+# 5. Unknown city: 404
+curl -i "http://localhost:4000/api/weather?city=Zzzzqqxx"
+ 
+# 6. Compare two cities: 200
+curl -i "http://localhost:4000/api/compare?cities=Toronto,Halifax"
+ 
+# 7. Compare with one unknown city: 200 (that city has ok: false, error.status 404)
+curl -i "http://localhost:4000/api/compare?cities=Toronto,Zzzzqqxx"
+ 
+# 8. Compare with only one city: 400
+curl -i "http://localhost:4000/api/compare?cities=Toronto"
+ 
+# 9. Cache statistics: 200
+curl -i "http://localhost:4000/api/cache/stats"
+ 
+# 10. Unknown route: 404
+curl -i "http://localhost:4000/nope"
 ```
-
 ## Data source
 
-TODO (you): credit Open-Meteo with a link to https://open-meteo.com/.
+Weather data provided by [Open-Meteo](https://open-meteo.com/).
 
 ## AI use
 
-TODO (you): each AI tool you used and what for, or "No AI tools used."
+- Took the help of AI in the TTL cache (`cache.js`), `parseCities`, the `/api/compare`=,weather.js`.(to fix bugs and errors)
